@@ -11,25 +11,25 @@ module "ec2" {
 
   instance_type  = var.instance_type
   instance_count = var.instance_count
-  key_name       = var.key_name
+ # key_name       = var.key_name
 
-  security_group_id = var.ec2_security_group_id
+# vpc_security_group_ids = ["sg-07b009841beb17191"]
 
-  allowed_ssh_cidr = var.allowed_ssh_cidr
+  allowed_ssh_cidr = "0.0.0.0/0"
 }
 
 # =========================
 # ALB MODULE
 # =========================
 
-module "alb" {
-  source = "../../modules/alb"
+# module "alb" {
+#   source = "../../modules/alb"
 
-  environment = var.environment
-  vpc_id      = var.vpc_id
-  subnet_ids  = var.subnet_ids
+#   environment = var.environment
+#   vpc_id      = var.vpc_id
+#   subnet_ids  = var.subnet_ids
 
-  security_group_id = var.alb_security_group_id
+#   security_group_id = var.alb_security_group_id
 
-  instance_ids = module.ec2.instance_ids
-}
+#   instance_ids = module.ec2.instance_ids
+# }

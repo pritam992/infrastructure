@@ -33,17 +33,17 @@ variable "instance_count" {
   type        = number
 }
 
-variable "key_name" {
-  description = "Existing EC2 key pair name"
-  type        = string
-}
+# variable "key_name" {
+#   description = "Existing EC2 key pair name"
+#   type        = string
+# }
 
 variable "allowed_ssh_cidr" {
   description = "CIDR allowed for SSH"
   type        = string
 }
 
-variable "security_group_id" {
-  description = "sg id"
-  type = string
-}
+# variable "vpc_security_group_ids" {
+#   description = "sg id"
+#   type = list(string)
+# }

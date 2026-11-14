@@ -28,10 +28,10 @@ variable "instance_count" {
   type        = number
 }
 
-variable "key_name" {
-  description = "Existing EC2 key pair"
-  type        = string
-}
+# variable "key_name" {
+#   description = "Existing EC2 key pair"
+#   type        = string
+# }
 
 variable "ec2_security_group_id" {
   description = "Existing EC2 security group ID"
@@ -43,7 +43,7 @@ variable "alb_security_group_id" {
   type        = string
 }
 
-variable "security_group_id" {
-  description = "Existing EC2 security group ID"
-  type        = string
-}
+# variable "vpc_security_group_ids" {
+#   description = "Existing EC2 security group ID"
+#   type        = list(string)
+# }

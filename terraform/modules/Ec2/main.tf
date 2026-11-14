@@ -1,6 +1,7 @@
 # =========================
 # Latest Amazon Linux 2023 AMI
 # =========================
+# Fetching the latest amazon linux ami id
 
 data "aws_ami" "amazon_linux" {
   most_recent = true
@@ -33,7 +34,7 @@ resource "aws_security_group" "ec2" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
@@ -68,7 +69,7 @@ resource "aws_instance" "this" {
 
   ami           = data.aws_ami.amazon_linux.id
   instance_type = var.instance_type
-  key_name      = var.key_name
+  #key_name      = var.key_name
 
   subnet_id = var.subnet_ids[count.index % length(var.subnet_ids)]
 
