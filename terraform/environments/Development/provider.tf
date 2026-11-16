@@ -1,4 +1,12 @@
+
 provider "aws" {
-access_key = ""
-secret_key = ""
+  region = var.aws_region
+
+  default_tags {
+    tags = {
+      Project     = "S3-RDS-Project"
+      Environment = "dev"
+      ManagedBy   = "Terraform"
+    }
+  }
 }
