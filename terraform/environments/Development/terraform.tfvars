@@ -1,5 +1,5 @@
 aws_region  = "ap-south-1"
-aws_profile = "s3user-Durga"
+aws_profile = "default"
 
 project_name = "Cloud-Master-Academy-Web-App"
 environment  = "dev"

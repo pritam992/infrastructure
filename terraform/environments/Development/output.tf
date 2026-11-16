@@ -33,10 +33,10 @@ output "rds_security_group_id" {
   value       = module.security.rds_security_group_id
 }
 
-output "s3_endpoint_id" {
-  description = "S3 Gateway endpoint ID"
-  value       = module.s3_endpoint.s3_endpoint_id
-}
+# output "s3_endpoint_id" {
+#   description = "S3 Gateway endpoint ID"
+#   value       = module.s3_endpoint.s3_endpoint_id
+# }
 
 output "rds_subnet_group_name" {
   description = "Private RDS DB subnet group name"

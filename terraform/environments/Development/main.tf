@@ -21,7 +21,7 @@ module "security" {
   app_ingress_cidr_blocks = var.app_ingress_cidr_blocks
 }
 
-module "s3_endpoint" {
+/*module "s3_endpoint" {
   source = "../../modules/s3-endpoint"
 
   project_name = var.project_name
@@ -30,7 +30,7 @@ module "s3_endpoint" {
   private_route_table_ids = module.vpc.private_route_table_ids
 
   existing_s3_bucket_name = var.existing_s3_bucket_name
-}
+}*/
 
 module "rds_networking" {
   source = "../../modules/rds-networking"
