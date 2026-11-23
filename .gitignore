@@ -44,7 +44,5 @@ terraform.rc
 # planout
 
 # Ignore unwanted Terraform configurations
-s3.tf
 Testing/
 Ec2/
-S3/
