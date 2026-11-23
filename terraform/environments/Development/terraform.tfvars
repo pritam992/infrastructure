@@ -1,7 +1,7 @@
 aws_region  = "ap-south-1"
 aws_profile = "default"
 
-project_name = "Cloud-Master-Academy-Web-App"
+project_name = "Cloud-Master-Academy-Web-App-dev"
 environment  = "dev"
 
 vpc_cidr = "192.172.0.0/24"
