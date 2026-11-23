@@ -22,7 +22,7 @@ pipeline {
     }
 
     environment {
-        TF_DIR           = "terraform/environments/${params.ENVIRONMENT ?: 'Development'}"
+        TF_DIR           = "terraform/environments/${params.ENVIRONMENT ?: 'Development', 'Testing'}"
         AWS_CONFIG_FILE  = "${WORKSPACE}/.aws-config"   // AWS settings for this build only
         TF_IN_AUTOMATION = 'true'
     }
