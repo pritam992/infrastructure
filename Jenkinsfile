@@ -1,13 +1,12 @@
 // Runs Terraform for one folder under terraform/environments/.
 //
-// Each environment folder needs two extra files:
-//   role_arn.txt - the AWS role Jenkins assumes for that account (one line)
-//   backend.hcl  - remote state settings (S3 bucket, key, region)
+// Each environment needs:
+//   backend.hcl in its folder            - remote state settings (S3 bucket, key, region)
+//   Jenkins credential aws-role-<folder> - "Secret text" holding the role ARN to assume,
+//                                          e.g. aws-role-Development
 
 pipeline {
-     agent {
-        label 'terraform-node'
-    } 
+    agent { label 'terraform-node' }
 
     parameters {
         string(name: 'ENVIRONMENT', defaultValue: 'Development', trim: true,
@@ -32,18 +31,26 @@ pipeline {
         stage('Check') {
             steps {
                 script {
+                    def envName = params.ENVIRONMENT ?: 'Development'
+
                     if (!fileExists(env.TF_DIR)) {
                         def folders = sh(returnStdout: true, script: 'ls terraform/environments').trim()
                         error "Folder ${env.TF_DIR} not found. Available: ${folders}"
+                    }
+                    if (!fileExists("${env.TF_DIR}/backend.hcl")) {
+                        error "Missing ${env.TF_DIR}/backend.hcl (remote state settings)."
                     }
                     if (params.ACTION == 'apply' && env.BRANCH_NAME != 'main') {
                         error 'Apply is only allowed from the main branch.'
                     }
 
                     // Terraform assumes this role using the Jenkins EC2 instance profile. No keys are stored.
-                    def roleArn = readFile("${env.TF_DIR}/role_arn.txt").trim()
-                    writeFile file: '.aws-config', text: "[default]\nrole_arn = ${roleArn}\ncredential_source = Ec2InstanceMetadata\n"
-                    echo "Environment: ${env.TF_DIR} | Role: ${roleArn} | Action: ${params.ACTION ?: 'plan'}"
+                    // The role ARN comes from the Jenkins credential aws-role-<folder>; Jenkins masks it in logs.
+                    withCredentials([string(credentialsId: "aws-role-${envName}", variable: 'ROLE_ARN')]) {
+                        writeFile file: '.aws-config',
+                                  text: "[default]\nrole_arn = ${env.ROLE_ARN}\ncredential_source = Ec2InstanceMetadata\n"
+                    }
+                    echo "Environment: ${env.TF_DIR} | Action: ${params.ACTION ?: 'plan'}"
                 }
             }
         }
