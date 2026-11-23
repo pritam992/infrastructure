@@ -5,7 +5,9 @@
 //   backend.hcl  - remote state settings (S3 bucket, key, region)
 
 pipeline {
-    agent any
+     agent {
+        label 'terraform-node'
+    } 
 
     parameters {
         string(name: 'ENVIRONMENT', defaultValue: 'Development', trim: true,
