@@ -8,24 +8,24 @@
 pipeline {
     agent { label 'terraform-node' }
 
-    parameters {
-        string(name: 'ENVIRONMENT', defaultValue: 'Development', trim: true,
-               description: 'Folder name under terraform/environments/')
-        choice(name: 'ACTION', choices: ['plan', 'apply'],
-               description: 'apply shows the plan, waits for approval, then applies (main branch only)')
-    }
+   parameters {
+    choice(name: 'ENVIRONMENT', choices: ['Development', 'Testing'],
+           description: 'Folder name under terraform/environments/')
+    choice(name: 'ACTION', choices: ['plan', 'apply'],
+           description: 'apply shows the plan, waits for approval, then applies (main branch only)')
+}
 
-    options {
-        timeout(time: 60, unit: 'MINUTES')
-        disableConcurrentBuilds()
-        buildDiscarder(logRotator(numToKeepStr: '30'))
-    }
+options {
+    timeout(time: 60, unit: 'MINUTES')
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(numToKeepStr: '30'))
+}
 
-    environment {
-        TF_DIR           = "terraform/environments/${params.ENVIRONMENT ?: 'Development', 'Testing'}"
-        AWS_CONFIG_FILE  = "${WORKSPACE}/.aws-config"   // AWS settings for this build only
-        TF_IN_AUTOMATION = 'true'
-    }
+environment {
+    TF_DIR           = "terraform/environments/${params.ENVIRONMENT ?: 'Development'}"
+    AWS_CONFIG_FILE  = "${WORKSPACE}/.aws-config"   // AWS settings for this build only
+    TF_IN_AUTOMATION = 'true'
+}
 
     stages {
         stage('Check') {
