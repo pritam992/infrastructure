@@ -9,7 +9,7 @@ pipeline {
     agent { label 'terraform-node' }
 
    parameters {
-    choice(name: 'ENVIRONMENT', choices: ['Development', 'Testing'],
+    choice(name: 'ENVIRONMENT', choices: ['Development', 'Testing', 'Production'],
            description: 'Folder name under terraform/environments/')
     choice(name: 'ACTION', choices: ['plan', 'apply'],
            description: 'apply shows the plan, waits for approval, then applies (main branch only)')
