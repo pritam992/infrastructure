@@ -58,7 +58,8 @@ environment {
         stage('Plan') {
             steps {
                 dir(env.TF_DIR) {
-                    sh 'terraform init -input=false -backend-config=backend.hcl'
+                    sh 'rm -rf .terraform'
+                    sh 'terraform init -input=false -reconfigure -backend-config=backend.hcl'
                     sh 'terraform validate'
                     sh 'terraform plan -input=false -out=tfplan'
                     sh 'terraform show -no-color tfplan > plan.txt'   // readable copy for reviewers
@@ -66,6 +67,7 @@ environment {
                 archiveArtifacts artifacts: "${env.TF_DIR}/plan.txt"
             }
         }
+
 
         stage('Approve') {
             when { expression { params.ACTION == 'apply' } }
