@@ -1,4 +1,4 @@
-bucket       = "infrastructure-devops-26"
+bucket       = "infrastructure-project-dev"
 key          = "infrastructure/Development/terraform.tfstate"
-region       = "us-east-1"
+region       = "ap-south-1"
 use_lockfile = true
