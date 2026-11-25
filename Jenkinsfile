@@ -87,6 +87,7 @@ EOF
         stage('Apply') {
             when {
                 expression { params.ACTION == 'apply' }
+push
             }
             steps {
                 dir(env.TF_DIR) {
