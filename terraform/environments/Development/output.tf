@@ -42,3 +42,15 @@
 #   description = "Private RDS DB subnet group name"
 #   value       = module.rds_networking.rds_subnet_group_name
 # }
+
+output "route53_hosted_zone_id" {
+  value = module.route53.hosted_zone_id
+}
+
+output "route53_nameservers" {
+  value = module.route53.name_servers
+}
+
+output "website_domain" {
+  value = module.route53.website_domain
+}
