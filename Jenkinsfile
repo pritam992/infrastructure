@@ -21,19 +21,15 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '30'))
     }
 
-     environment {
-        
-    TF_DIR = "terraform/environments/${params.ENVIRONMENT ?: 'Development'}"
-    AWS_CONFIG_FILE = "${WORKSPACE}/.aws-config"
-
-    AWS_DEFAULT_REGION = 'ap-south-1'
-    AWS_REGION = 'ap-south-1'
-
-    TF_IN_AUTOMATION = 'true'
-    TF_CLI_ARGS = '-no-color'
-    LANG = 'en_US.UTF-8'
-    LC_ALL = 'en_US.UTF-8'
-}
+    environment {
+        TF_DIR = "terraform/environments/${params.ENVIRONMENT ?: 'Development'}"
+        AWS_CONFIG_FILE = "${WORKSPACE}/.aws-config"
+        AWS_DEFAULT_REGION = 'ap-south-1'
+        AWS_REGION = 'ap-south-1'
+        TF_IN_AUTOMATION = 'true'
+        TF_CLI_ARGS = '-no-color'
+        LANG = 'en_US.UTF-8'
+        LC_ALL = 'en_US.UTF-8'
     }
 
     stages {
@@ -55,13 +51,17 @@ pipeline {
                     }
 
                     withCredentials([
-                        string(credentialsId: "aws-role-${envName}", variable: 'ROLE_ARN')
+                        string(
+                            credentialsId: "aws-role-${envName}",
+                            variable: 'ROLE_ARN'
+                        )
                     ]) {
                         sh '''
                             cat <<EOF > .aws-config
 [default]
 role_arn = $ROLE_ARN
 credential_source = Ec2InstanceMetadata
+region = ap-south-1
 EOF
                         '''
                     }
@@ -111,9 +111,11 @@ EOF
             }
             steps {
                 timeout(time: 30, unit: 'MINUTES') {
-                    input message: "Apply plan to ${params.ENVIRONMENT}?",
-                          ok: 'Apply',
-                          submitter: 'devops-admins'
+                    input(
+                        message: "Apply plan to ${params.ENVIRONMENT}?",
+                        ok: 'Apply',
+                        submitter: 'devops-admins'
+                    )
                 }
             }
         }
