@@ -75,3 +75,22 @@ variable "record_value" {
   type    = string
   default = ""
 }
+
+# ============================================================
+# CloudFront - Development Variables
+# ============================================================
+
+# Default page of the static website.
+variable "cloudfront_default_root_object" {
+  description = "Default website page"
+  type        = string
+  default     = "index.html"
+}
+
+
+# index.html fallback for client-side routes.
+variable "cloudfront_spa_mode" {
+  description = "Enable SPA route fallback"
+  type        = bool
+  default     = false
+}

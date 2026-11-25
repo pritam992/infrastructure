@@ -35,3 +35,13 @@ existing_s3_bucket_name = "myproject-dev-existing-bucket" // it's needed to be r
 domain_name  = ""
 record_name  = ""
 record_value = ""
+
+# ============================================================
+# CloudFront - Development Configuration
+# ============================================================
+
+# Main page served when users access the website.
+cloudfront_default_root_object = "index.html"
+
+# Traditional static website: false
+cloudfront_spa_mode = false
