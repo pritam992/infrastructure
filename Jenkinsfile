@@ -21,13 +21,19 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '30'))
     }
 
-    environment {
-        TF_DIR = "terraform/environments/${params.ENVIRONMENT ?: 'Development'}"
-        AWS_CONFIG_FILE = "${WORKSPACE}/.aws-config"
-        TF_IN_AUTOMATION = 'true'
-        TF_CLI_ARGS = '-no-color'
-        LANG = 'en_US.UTF-8'
-        LC_ALL = 'en_US.UTF-8'
+     environment {
+        
+    TF_DIR = "terraform/environments/${params.ENVIRONMENT ?: 'Development'}"
+    AWS_CONFIG_FILE = "${WORKSPACE}/.aws-config"
+
+    AWS_DEFAULT_REGION = 'ap-south-1'
+    AWS_REGION = 'ap-south-1'
+
+    TF_IN_AUTOMATION = 'true'
+    TF_CLI_ARGS = '-no-color'
+    LANG = 'en_US.UTF-8'
+    LC_ALL = 'en_US.UTF-8'
+}
     }
 
     stages {
