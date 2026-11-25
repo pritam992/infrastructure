@@ -29,7 +29,7 @@ app_port   = 8080
 app_ingress_cidr_blocks = []
 
 # Replace with your team's existing bucket name.
-existing_s3_bucket_name = "myproject-dev-existing-bucket" // it's needed to be replaced with my team's existing bucket name.
+existing_s3_bucket_name = "mprjct1-user-upload-ec2-s3-durga-dev" // it's needed to be replaced with my team's existing bucket name.
 
 # Replace with my team's existing domain name and record name here.
 domain_name  = ""
