@@ -11,18 +11,14 @@
 # ============================================================
 
 # Look up the existing S3 bucket. This does not create a bucket.
-data "aws_s3_bucket" "static_site" {
-  bucket = var.existing_s3_bucket_name
-}
-
 module "cloudfront" {
   source = "../../modules/cloudfront"
 
-  # Existing S3 bucket information.
-  bucket_id = data.aws_s3_bucket.static_site.id
+  # Use the S3 bucket created by the dev-s3 module.
+  bucket_id = module.dev-s3.bucket_id
 
   bucket_regional_domain_name = (
-    data.aws_s3_bucket.static_site.bucket_regional_domain_name
+    module.dev-s3.bucket_regional_domain_name
   )
 
   # Environment and project details.
