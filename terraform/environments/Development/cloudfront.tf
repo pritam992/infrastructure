@@ -10,14 +10,19 @@
 # if it is different in s3.tf.
 # ============================================================
 
+# Look up the existing S3 bucket. This does not create a bucket.
+data "aws_s3_bucket" "static_site" {
+  bucket = var.existing_s3_bucket_name
+}
+
 module "cloudfront" {
   source = "../../modules/cloudfront"
 
   # Existing S3 bucket information.
-  bucket_id = aws_s3_bucket.static_site.id
+  bucket_id = data.aws_s3_bucket.static_site.id
 
   bucket_regional_domain_name = (
-    aws_s3_bucket.static_site.bucket_regional_domain_name
+    data.aws_s3_bucket.static_site.bucket_regional_domain_name
   )
 
   # Environment and project details.
