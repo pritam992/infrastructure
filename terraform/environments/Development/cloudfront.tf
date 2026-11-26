@@ -1,9 +1,12 @@
+
 # Existing S3 bucket lookup
+
 data "aws_s3_bucket" "existing" {
   bucket = var.existing_s3_bucket_name
 }
 
-# CloudFront module
+# CloudFront Module
+
 module "cloudfront" {
   source = "../../modules/cloudfront"
 
