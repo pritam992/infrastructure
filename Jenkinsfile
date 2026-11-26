@@ -1,16 +1,18 @@
-// Runs Terraform for one folder under terraform/environments/.
-//
-// Each environment needs:
-// backend.hcl in its folder - remote state settings (S3 bucket, key, region)
-// Jenkins credential aws-role-<folder> - "Secret text" holding the role ARN to assume,
-// e.g. aws-role-Development
 
 pipeline {
     agent { label 'terraform-node' }
 
     parameters {
-        choice(name: 'ENVIRONMENT', choices: ['Development', 'Testing', 'Production'], description: 'Folder name under terraform/environments/')
-        choice(name: 'ACTION', choices: ['plan', 'apply'], description: 'apply shows the plan, waits for approval, then applies (main branch only)')
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['Development', 'Testing', 'Production'],
+            description: 'Environment folder'
+        )
+        choice(
+            name: 'ACTION',
+            choices: ['plan', 'apply'],
+            description: 'Terraform action'
+        )
     }
 
     options {
@@ -21,52 +23,83 @@ pipeline {
 
     environment {
         TF_DIR = "terraform/environments/${params.ENVIRONMENT ?: 'Development'}"
-        AWS_CONFIG_FILE = "${WORKSPACE}/.aws-config" // AWS settings for this build only
+        AWS_CONFIG_FILE = "${WORKSPACE}/.aws-config"
+        AWS_DEFAULT_REGION = 'ap-south-1'
+        AWS_REGION = 'ap-south-1'
         TF_IN_AUTOMATION = 'true'
-        TF_CLI_ARGS = '-no-color' // Removes ANSI color codes ([31m, [0m) from console output
-        LANG = 'en_US.UTF-8'      // Ensures UTF-8 box characters (│) render cleanly
+        TF_CLI_ARGS = '-no-color'
+        LANG = 'en_US.UTF-8'
         LC_ALL = 'en_US.UTF-8'
     }
 
     stages {
-        stage('Check') {
+        stage('Checkout') {
             steps {
                 script {
                     def envName = params.ENVIRONMENT ?: 'Development'
+
                     if (!fileExists(env.TF_DIR)) {
-                        def folders = sh(returnStdout: true, script: 'ls terraform/environments').trim()
-                        error "Folder ${env.TF_DIR} not found. Available: ${folders}"
+                        error "Folder ${env.TF_DIR} not found."
                     }
+
                     if (!fileExists("${env.TF_DIR}/backend.hcl")) {
-                        error "Missing ${env.TF_DIR}/backend.hcl (remote state settings)."
+                        error "Missing backend.hcl in ${env.TF_DIR}"
                     }
+
                     if (params.ACTION == 'apply' && env.BRANCH_NAME != 'main') {
-                        error 'Apply is only allowed from the main branch.'
+                        error 'Apply is only allowed from main branch.'
                     }
-                    // Terraform assumes this role using the Jenkins EC2 instance profile. No keys are stored.
-                    // Using single-quoted sh avoids Groovy string interpolation security warnings.
-                    withCredentials([string(credentialsId: "aws-role-${envName}", variable: 'ROLE_ARN')]) {
+
+                    withCredentials([
+                        string(
+                            credentialsId: "aws-role-${envName}",
+                            variable: 'ROLE_ARN'
+                        )
+                    ]) {
                         sh '''
                             cat <<EOF > .aws-config
 [default]
 role_arn = $ROLE_ARN
 credential_source = Ec2InstanceMetadata
+region = ap-south-1
 EOF
                         '''
                     }
-                    echo "Environment: ${env.TF_DIR} | Action: ${params.ACTION ?: 'plan'}"
+
+                    echo "Environment: ${env.TF_DIR} | Action: ${params.ACTION}"
                 }
             }
         }
 
-        stage('Plan') {
+        stage('Terraform Init') {
             steps {
                 dir(env.TF_DIR) {
-                    sh 'rm -rf .terraform'
                     sh 'terraform init -input=false -reconfigure -backend-config=backend.hcl'
+                }
+            }
+        }
+
+        stage('Terraform Format') {
+            steps {
+                dir(env.TF_DIR) {
+                    sh 'terraform fmt -check -recursive'
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir(env.TF_DIR) {
                     sh 'terraform validate'
-                    sh 'terraform plan -lock=false -input=false -out=tfplan'
-                    sh 'terraform show tfplan > plan.txt' // readable copy for reviewers
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir(env.TF_DIR) {
+                    sh 'terraform plan -input=false -out=tfplan'
+                    sh 'terraform show tfplan > plan.txt'
                 }
                 archiveArtifacts artifacts: "${env.TF_DIR}/plan.txt"
             }
@@ -78,8 +111,11 @@ EOF
             }
             steps {
                 timeout(time: 30, unit: 'MINUTES') {
-                    // Change 'devops-admins' to the Jenkins user or group allowed to approve.
-                    input message: "Apply plan.txt to ${params.ENVIRONMENT}?", ok: 'Apply', submitter: 'devops-admins'
+                    input(
+                        message: "Apply plan to ${params.ENVIRONMENT}?",
+                        ok: 'Apply',
+                        submitter: 'devops-admins'
+                    )
                 }
             }
         }
@@ -90,7 +126,7 @@ EOF
             }
             steps {
                 dir(env.TF_DIR) {
-                    sh 'terraform apply -lock=false -input=false tfplan' // applies exactly the approved plan
+                    sh 'terraform apply -input=false tfplan'
                 }
             }
         }
@@ -98,7 +134,13 @@ EOF
 
     post {
         always {
-            sh "rm -f .aws-config ${env.TF_DIR}/tfplan ${env.TF_DIR}/plan.txt"
+            sh 'rm -f .aws-config'
+        }
+        success {
+            echo 'Terraform deployment successful!'
+        }
+        failure {
+            echo 'Terraform deployment failed. Check console output.'
         }
     }
 }
