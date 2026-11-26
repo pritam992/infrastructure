@@ -1,7 +1,5 @@
 # infrastructure
 
-# infrastructure
-
 Terraform for multiple AWS environments, deployed by a Jenkins multibranch pipeline.
 
 ## Layout
