@@ -1,8 +1,6 @@
 
-# S3 Module - Development
-
-module "dev-s3" {
-  source = "../../modules/s3"
-
-  s3_name = var.existing_s3_bucket_name
-}
+# Development environment resources
+# CloudFront configuration is maintained in cloudfront.tf.
+# Existing S3 bucket is referenced using a data source.
+# No new S3 bucket is created in this environment.
+# No Route53 custom domain is configured for this lab.
