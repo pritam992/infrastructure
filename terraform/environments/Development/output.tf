@@ -1,3 +1,4 @@
+
 # output "vpc_id" {
 #   description = "DEV VPC ID"
 #   value       = module.vpc.vpc_id
@@ -33,24 +34,19 @@
 #   value       = module.security.rds_security_group_id
 # }
 
-# # output "s3_endpoint_id" {
-# #   description = "S3 Gateway endpoint ID"
-# #   value       = module.s3_endpoint.s3_endpoint_id
-# # }
-
 # output "rds_subnet_group_name" {
 #   description = "Private RDS DB subnet group name"
 #   value       = module.rds_networking.rds_subnet_group_name
 # }
 
 output "s3_bucket_id" {
-  value = module.s3.bucket_id
+  value = module.dev-s3.bucket_id
 }
 
 output "s3_bucket_arn" {
-  value = module.s3.bucket_arn
+  value = module.dev-s3.bucket_arn
 }
 
 output "s3_bucket_name" {
-  value = module.s3.bucket_name
+  value = module.dev-s3.bucket_name
 }
