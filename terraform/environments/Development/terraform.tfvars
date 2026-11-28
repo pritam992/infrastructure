@@ -1,9 +1,15 @@
-#S3 variables
+
+# AWS Configuration
+
 aws_region  = "ap-south-1"
 aws_profile = "default"
 
+# Project Configuration
+
 project_name = "Cloud-Master-Academy-Web-App-dev"
 environment  = "dev"
+
+# VPC Configuration
 
 vpc_cidr = "192.172.0.0/24"
 
@@ -22,16 +28,24 @@ private_subnet_cidrs = [
   "192.172.0.192/26"
 ]
 
+# Application Configuration
+
 mysql_port = 3306
 app_port   = 8080
 
-# Keep empty until the approved application entry point is confirmed.
 app_ingress_cidr_blocks = []
 
-# Replace with your team's existing bucket name.
-existing_s3_bucket_name = "myproject-dev-existing-bucket" // it's needed to be replaced with my team's existing bucket name.
+# S3 Configuration
 
-# Replace with my team's existing domain name and record name here.
-domain_name  = ""
+existing_s3_bucket_name = "prjct1-user-upload-ec2-s3-durga-dev"
+
+# Route 53 Configuration
+
+domain_name  = "cloudmasteracademy.in"
 record_name  = ""
 record_value = ""
+
+# CloudFront Configuration
+
+cloudfront_default_root_object = "index.html"
+cloudfront_spa_mode            = false

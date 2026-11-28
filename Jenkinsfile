@@ -1,89 +1,132 @@
-// Runs Terraform for one folder under terraform/environments/.
-//
-// Each environment needs:
-//   backend.hcl in its folder            - remote state settings (S3 bucket, key, region)
-//   Jenkins credential aws-role-<folder> - "Secret text" holding the role ARN to assume,
-//                                          e.g. aws-role-Development
 
 pipeline {
     agent { label 'terraform-node' }
 
-   parameters {
-    choice(name: 'ENVIRONMENT', choices: ['Development', 'Testing', 'Production'],
-           description: 'Folder name under terraform/environments/')
-    choice(name: 'ACTION', choices: ['plan', 'apply'],
-           description: 'apply shows the plan, waits for approval, then applies (main branch only)')
-}
+    parameters {
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['Development', 'Testing', 'Production'],
+            description: 'Environment folder'
+        )
+        choice(
+            name: 'ACTION',
+            choices: ['plan', 'apply'],
+            description: 'Terraform action'
+        )
+    }
 
-options {
-    timeout(time: 60, unit: 'MINUTES')
-    disableConcurrentBuilds()
-    buildDiscarder(logRotator(numToKeepStr: '30'))
-}
+    options {
+        timeout(time: 60, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+    }
 
-environment {
-    TF_DIR           = "terraform/environments/${params.ENVIRONMENT ?: 'Development'}"
-    AWS_CONFIG_FILE  = "${WORKSPACE}/.aws-config"   // AWS settings for this build only
-    TF_IN_AUTOMATION = 'true'
-}
+    environment {
+        TF_DIR = "terraform/environments/${params.ENVIRONMENT ?: 'Development'}"
+        AWS_CONFIG_FILE = "${WORKSPACE}/.aws-config"
+        AWS_DEFAULT_REGION = 'ap-south-1'
+        AWS_REGION = 'ap-south-1'
+        TF_IN_AUTOMATION = 'true'
+        TF_CLI_ARGS = '-no-color'
+        LANG = 'en_US.UTF-8'
+        LC_ALL = 'en_US.UTF-8'
+    }
 
     stages {
-        stage('Check') {
+        stage('Checkout') {
             steps {
                 script {
                     def envName = params.ENVIRONMENT ?: 'Development'
 
                     if (!fileExists(env.TF_DIR)) {
-                        def folders = sh(returnStdout: true, script: 'ls terraform/environments').trim()
-                        error "Folder ${env.TF_DIR} not found. Available: ${folders}"
-                    }
-                    if (!fileExists("${env.TF_DIR}/backend.hcl")) {
-                        error "Missing ${env.TF_DIR}/backend.hcl (remote state settings)."
-                    }
-                    if (params.ACTION == 'apply' && env.BRANCH_NAME != 'main') {
-                        error 'Apply is only allowed from the main branch.'
+                        error "Folder ${env.TF_DIR} not found."
                     }
 
-                    // Terraform assumes this role using the Jenkins EC2 instance profile. No keys are stored.
-                    // The role ARN comes from the Jenkins credential aws-role-<folder>; Jenkins masks it in logs.
-                    withCredentials([string(credentialsId: "aws-role-${envName}", variable: 'ROLE_ARN')]) {
-                        writeFile file: '.aws-config',
-                                  text: "[default]\nrole_arn = ${env.ROLE_ARN}\ncredential_source = Ec2InstanceMetadata\n"
+                    if (!fileExists("${env.TF_DIR}/backend.hcl")) {
+                        error "Missing backend.hcl in ${env.TF_DIR}"
                     }
-                    echo "Environment: ${env.TF_DIR} | Action: ${params.ACTION ?: 'plan'}"
+
+                    if (params.ACTION == 'apply' && env.BRANCH_NAME != 'main') {
+                        error 'Apply is only allowed from main branch.'
+                    }
+
+                    withCredentials([
+                        string(
+                            credentialsId: "aws-role-${envName}",
+                            variable: 'ROLE_ARN'
+                        )
+                    ]) {
+                        sh '''
+                            cat <<EOF > .aws-config
+[default]
+role_arn = $ROLE_ARN
+credential_source = Ec2InstanceMetadata
+region = ap-south-1
+EOF
+                        '''
+                    }
+
+                    echo "Environment: ${env.TF_DIR} | Action: ${params.ACTION}"
                 }
             }
         }
 
-        stage('Plan') {
+        stage('Terraform Init') {
             steps {
                 dir(env.TF_DIR) {
-                    sh 'rm -rf .terraform'
                     sh 'terraform init -input=false -reconfigure -backend-config=backend.hcl'
+                }
+            }
+        }
+
+        stage('Terraform Format') {
+            steps {
+                dir(env.TF_DIR) {
+                    sh 'terraform fmt -check -recursive'
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir(env.TF_DIR) {
                     sh 'terraform validate'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir(env.TF_DIR) {
                     sh 'terraform plan -input=false -out=tfplan'
-                    sh 'terraform show -no-color tfplan > plan.txt'   // readable copy for reviewers
+                    sh 'terraform show tfplan > plan.txt'
                 }
                 archiveArtifacts artifacts: "${env.TF_DIR}/plan.txt"
             }
         }
 
-
         stage('Approve') {
-            when { expression { params.ACTION == 'apply' } }
+            when {
+                expression { params.ACTION == 'apply' }
+            }
             steps {
                 timeout(time: 30, unit: 'MINUTES') {
-                    // Change 'devops-admins' to the Jenkins user or group allowed to approve.
-                    input message: "Apply plan.txt to ${params.ENVIRONMENT}?", ok: 'Apply', submitter: 'devops-admins'
+                    input(
+                        message: "Apply plan to ${params.ENVIRONMENT}?",
+                        ok: 'Apply',
+                        submitter: 'devops-admins'
+                    )
                 }
             }
         }
 
         stage('Apply') {
-            when { expression { params.ACTION == 'apply' } }
+            when {
+                expression { params.ACTION == 'apply' }
+            }
             steps {
                 dir(env.TF_DIR) {
-                    sh 'terraform apply -input=false tfplan'   // applies exactly the approved plan
+                    sh 'terraform apply -input=false tfplan'
                 }
             }
         }
@@ -91,7 +134,13 @@ environment {
 
     post {
         always {
-            sh "rm -f .aws-config ${env.TF_DIR}/tfplan ${env.TF_DIR}/plan.txt"
+            sh 'rm -f .aws-config'
+        }
+        success {
+            echo 'Terraform deployment successful!'
+        }
+        failure {
+            echo 'Terraform deployment failed. Check console output.'
         }
     }
 }
